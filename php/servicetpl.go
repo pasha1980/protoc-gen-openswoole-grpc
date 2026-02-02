@@ -26,7 +26,6 @@ package php
 import (
 	"bytes"
 	"fmt"
-	"strings"
 	"text/template"
 
 	desc "google.golang.org/protobuf/types/descriptorpb"
@@ -90,21 +89,21 @@ class {{ .Service.Name | service }} implements {{ .Service.Name | interface }}
 `
 
 func interfacefilename(file *desc.FileDescriptorProto, name *string) string {
-	ns := namespace(file.Package, "/")
+	ns := namespace(file.Package, "\\")
 	if file.Options != nil && file.Options.PhpNamespace != nil {
-		ns = strings.ReplaceAll(*file.Options.PhpNamespace, `\`, `/`)
+		ns = *file.Options.PhpNamespace
 	}
 
-	return fmt.Sprintf("%s/%s.php", ns, identifier(*name, "interface"))
+	return fmt.Sprintf("%s/%s.php", filePathFromNamespace(ns), identifier(*name, "interface"))
 }
 
 func servicefilename(file *desc.FileDescriptorProto, name *string) string {
-	ns := namespace(file.Package, "/")
+	ns := namespace(file.Package, "\\")
 	if file.Options != nil && file.Options.PhpNamespace != nil {
-		ns = strings.ReplaceAll(*file.Options.PhpNamespace, `\`, `/`)
+		ns = *file.Options.PhpNamespace
 	}
 
-	return fmt.Sprintf("%s/%s.php", ns, identifier(*name, "service"))
+	return fmt.Sprintf("%s/%s.php", filePathFromNamespace(ns), identifier(*name, "service"))
 }
 
 func interfacebody(req *plugin.CodeGeneratorRequest, file *desc.FileDescriptorProto, service *desc.ServiceDescriptorProto) string {

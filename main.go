@@ -27,7 +27,6 @@ import (
 	"google.golang.org/protobuf/proto"
 	plugin "google.golang.org/protobuf/types/pluginpb"
 	"io"
-	"io/ioutil"
 	"os"
 	"protoc-gen-openswoole-grpc/php"
 )
@@ -44,7 +43,7 @@ func main() {
 }
 
 func readRequest(in io.Reader) (*plugin.CodeGeneratorRequest, error) {
-	data, err := ioutil.ReadAll(in)
+	data, err := io.ReadAll(in)
 	if err != nil {
 		return nil, err
 	}

@@ -25,6 +25,10 @@ package php
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"unicode"
 )
@@ -74,6 +78,54 @@ func namespace(pkg *string, sep string) string {
 	}
 
 	return strings.Trim(result.String(), sep)
+}
+
+// filePathFromNamespace returns directory by namespace
+// it also checks for composer.json file with defined autoload/psr-4 directive and follows it
+func filePathFromNamespace(ns string) string {
+	result := strings.ReplaceAll(ns, `\`, `/`)
+	baseDir, err := os.Getwd()
+	if err != nil {
+		return result
+	}
+
+	var f *os.File
+	for {
+		f, err = os.OpenFile(filepath.Join(baseDir, "composer.json"), os.O_RDONLY, 0600)
+		if err != nil && errors.Is(err, os.ErrNotExist) {
+			baseDir = filepath.Dir(baseDir)
+			if baseDir == "/" || baseDir == "" {
+				return result
+			}
+		}
+
+		if f != nil {
+			break
+		}
+	}
+
+	var composer struct {
+		Autoload struct {
+			Psr4 map[string]string `json:"psr-4"`
+		} `json:"autoload"`
+	}
+
+	err = json.NewDecoder(f).Decode(&composer)
+	if err != nil {
+		return result
+	}
+
+	for prefix, sub := range composer.Autoload.Psr4 {
+		if strings.HasPrefix(ns, prefix) {
+			return strings.ReplaceAll(
+				strings.Replace(ns, prefix, sub, 1),
+				`\`,
+				`/`,
+			)
+		}
+	}
+
+	return result
 }
 
 // create php identifier for class or message
